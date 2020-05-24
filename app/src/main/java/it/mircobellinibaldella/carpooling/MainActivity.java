@@ -9,13 +9,17 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
-    Button loginButton,registratiButton;
+    Button loginButton,registratiButton, visualizzaMappaButton;
     EditText email, password;
+    TextView titolo;
 
 
     @Override
@@ -26,26 +30,32 @@ public class MainActivity extends AppCompatActivity {
         StrictMode.setThreadPolicy(policy);
         loginButton=findViewById(R.id.mainLogin);
         registratiButton=findViewById(R.id.mainRegistrati);
+        visualizzaMappaButton=findViewById(R.id.mainMappa);
         email=findViewById(R.id.mainEmail);
         password=findViewById(R.id.mainPassword);
+        titolo=findViewById(R.id.mainTitolo);
 
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                JSONArray jsonArray = ConnessioneWebDB.Login(email.getText().toString(),password.getText().toString());
+                ConnessioneWebDB connessioneWebDB = new ConnessioneWebDB();
+                JSONObject jsonObject = connessioneWebDB.Login(email.getText().toString(),password.getText().toString());
                 try {
-                    int risposta = jsonArray.getJSONObject(0).getInt("risposta");
-                    String testo = jsonArray.getJSONObject(0).getString("testo");
+                    int risposta = jsonObject.getInt("risposta");
+                    String testo = jsonObject.getString("testo");
 
                     switch (risposta){
                         case 0:
-                            Log.d("aburbe","Errore");
+                            Toast toast = Toast.makeText(MainActivity.this,testo,Toast.LENGTH_LONG);
+                            toast.show();
                             break;
                         case 1:
                             email.setEnabled(false);
                             password.setEnabled(false);
                             loginButton.setVisibility(View.GONE);
                             registratiButton.setVisibility(View.GONE);
+                            titolo.setText(testo);
+                            visualizzaMappaButton.setVisibility(View.VISIBLE);
                             break;
 
                     }
@@ -56,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        registratiButton.setOnClickListener(new View.OnClickListener() {
+        visualizzaMappaButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //Avvia l'activity della mappa

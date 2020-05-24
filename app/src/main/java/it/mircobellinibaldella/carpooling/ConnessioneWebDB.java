@@ -1,56 +1,51 @@
 package it.mircobellinibaldella.carpooling;
 
-import android.icu.util.LocaleData;
+import android.os.AsyncTask;
 import android.util.Log;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
-public class ConnessioneWebDB {
+public class ConnessioneWebDB extends AsyncTask<URL, Void, JSONObject> {
 
     static String server="http://mircocarpooling.altervista.org/android/";
 
-    public static JSONArray Login(String email, String password){
-        JSONArray resultsArray=null;
-        HttpClient httpclient = new DefaultHttpClient();
-        HttpPost httppost = new HttpPost(server+"login.php");
-
-        List<NameValuePair> valoripost = new ArrayList<NameValuePair>(2);
-        valoripost.add(new BasicNameValuePair("email", email));
-        valoripost.add(new BasicNameValuePair("password", password));
-        Log.d("aaa","ok");
+    @Override
+    protected JSONObject doInBackground(URL... param) {
+        String stringaRes="";
+        JSONObject result=null;
         try {
-            httppost.setEntity(new UrlEncodedFormEntity(valoripost));
-            Log.d("aaa","1");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        try {
-            Log.d("aaa","2");
-            HttpResponse response = httpclient.execute(httppost);
-            Log.d("aaa","3");
-            String json = EntityUtils.toString(response.getEntity());
-            Log.d("aaa",json);
-            resultsArray = new JSONArray(json);
+            HttpURLConnection urlConn = (HttpURLConnection) param[0].openConnection();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(urlConn.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                stringaRes+=line;
+            }
+            reader.close();
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
+            Log.d("ConnessioneWebDB","Eccezione\n"+e.getMessage());
         }
+        try {
+            result = new JSONObject(stringaRes);
+        } catch (JSONException e) {
+            Log.d("ConnessioneWebDB","Errore nella creazione del JSON in doInBackground()\n"+e.getMessage());
+        }
+        return result;
+    }
 
-        return resultsArray;
+    public JSONObject Login(String email, String password){
+        try {
+            return doInBackground(new URL(server+"/login.php?email="+email+"&password="+password));
+        } catch (MalformedURLException e) {
+            Log.d("ConnessioneWebDB","URL Scritto male in Login(String email, String password)");
+        }
+        return null;
     }
 }
